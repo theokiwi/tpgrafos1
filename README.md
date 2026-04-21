@@ -8,23 +8,20 @@
 </p>
 
 <p align="center">
-  Implementacao em Java de algoritmos classicos de grafos, com foco em deteccao de pontes,
-  classificacao euleriana e execucao do algoritmo de Fleury sobre instancias de teste.
+  Implementacao em Java de algoritmos clássicos de grafos, com foco em detecção de pontes, classificação euleriana e execução do algoritmo de Fleury sobre instâncias de teste.
 </p>
 
 ## Visao Geral
 
-Este repositorio reune uma implementacao de estruturas e algoritmos estudados na disciplina de Grafos.
-O projeto trabalha com grafos nao direcionados e usa uma representacao baseada em `forward star`
-para armazenar adjacencias de forma compacta.
+Este repositorio reune uma implementacao de estruturas e algoritmos estudados na disciplina de Grafos. O projeto trabalha com grafos não direcionados e usa uma representação baseada em `forward star` para armazenar adjacências de forma compacta.
 
 Os principais componentes implementados sao:
 
-- `Tarjan`: deteccao de pontes usando DFS com vetores `discovery` e `low`.
-- `Naive`: deteccao de pontes por comparacao do numero de componentes conexas.
-- `Fleury`: construcao de caminho ou ciclo euleriano, evitando pontes quando possivel.
-- `Grafo`: leitura de instancias, armazenamento das arestas e montagem do `forward star`.
-- Scripts em Python para geracao de instancias e visualizacao de desempenho.
+- `Tarjan`: detecção de pontes usando DFS com vetores `discovery` e `low`.
+- `Naive`: detecção de pontes por comparacao do numero de componentes conexas.
+- `Fleury`: construção de caminho ou ciclo euleriano, evitando pontes quando possivel.
+- `Grafo`: leitura de instâncias, armazenamento das arestas e montagem do `forward star`.
+- Scripts em Python para geracao de instânncias e visualização de desempenho.
 
 ## O Que o Projeto Faz
 
@@ -34,7 +31,7 @@ O sistema permite:
 - Executar Tarjan para encontrar pontes.
 - Executar o metodo Naive para encontrar pontes.
 - Executar Fleury apoiado por Tarjan ou por Naive.
-- Classificar grafos como `Ciclo Euleriano`, `Caminho Euleriano` ou `Nao Euleriano`.
+- Classificar grafos como `Ciclo Euleriano`, `Caminho Euleriano` ou `Não Euleriano`.
 - Gerar e organizar conjuntos de exemplos para testes.
 - Gerar graficos de desempenho a partir dos resultados.
 
@@ -65,46 +62,40 @@ O sistema permite:
 
 ## Representacao do Grafo
 
-O projeto usa uma combinacao de estruturas para manter a implementacao organizada:
+O projeto usa uma combinação de estruturas para manter a implementação organizada:
 
-- `pointer` e `arcDest` representam a adjacencia com `forward star`.
+- `pointer` e `arcDest` representam a adjacência com `forward star`.
 - `arcArestas` associa cada arco do `forward star` a sua aresta real.
-- `arestas` guarda o conjunto de arestas unicas do grafo.
+- `arestas` guarda o conjunto de arestas únicas do grafo.
 - `indiceArestas` permite recuperar rapidamente a aresta correspondente ao par `(u, v)`.
-- `graus` armazena o grau de cada vertice para apoiar a classificacao euleriana.
+- `graus` armazena o grau de cada vértice para apoiar a classificação euleriana.
 
-Essa escolha deixa a travessia mais simples para os algoritmos, especialmente nos casos em que
-precisamos percorrer vizinhos e, ao mesmo tempo, consultar o estado da aresta associada.
+Essa escolha deixa a travessia mais simples para os algoritmos, especialmente nos casos em que precisamos percorrer vizinhos e, ao mesmo tempo, consultar o estado da aresta associada.
 
 ## Algoritmos Implementados
 
 ### Tarjan
 
-Detecta pontes em tempo linear sobre a estrutura do grafo usando busca em profundidade.
-Cada vertice recebe um tempo de descoberta e um valor `low`, o que permite verificar se uma
-aresta e uma ponte.
+Detecta pontes em tempo linear sobre a estrutura do grafo usando busca em profundidade. Cada vertice recebe um tempo de descoberta e um valor `low`, o que permite verificar se uma aresta é uma ponte.
 
 ### Naive
 
-Testa se uma aresta e ponte comparando o numero de componentes conexas antes e depois de sua
-remocao logica. E mais simples conceitualmente, mas tende a ser mais custoso.
+Testa se uma aresta é ponte comparando o número de componentes conexos antes e depois de sua remoção lógica. É mais simples conceitualmente, mas tende a ser mais custoso.
 
 ### Fleury
 
-Constroi um caminho euleriano ou ciclo euleriano removendo arestas gradualmente.
-Quando ha mais de uma opcao de movimento, o algoritmo tenta evitar pontes para nao quebrar
-o restante do percurso.
+Constrói um caminho euleriano ou ciclo euleriano removendo arestas gradualmente. Quando há mais de uma opção de remoção, o algoritmo tenta evitar pontes para não quebrar o restante do percurso.
 
 ## Arquivos de Exemplo
 
-A pasta [`exemplosGrafos`](./exemplosGrafos) contem instancias prontas para testes, incluindo:
+A pasta [`exemplosGrafos`](./exemplosGrafos) contém instâncias prontas para testes, incluindo:
 
 - grafos eulerianos
 - grafos semi-eulerianos
-- grafos nao eulerianos
+- grafos não eulerianos
 - grafos com pontes
 
-Os tamanhos atualmente presentes no repositorio incluem:
+Os tamanhos atualmente presentes no repositório incluem:
 
 - `100`
 - `1000`
@@ -113,7 +104,7 @@ Os tamanhos atualmente presentes no repositorio incluem:
 
 ## Como Compilar
 
-Requisito minimo:
+Requisito mínimo:
 
 - JDK instalado e disponivel no terminal
 
@@ -131,14 +122,14 @@ Executar o menu principal:
 java Main
 ```
 
-Pelo menu, voce pode:
+Pelo menu, você pode:
 
 1. executar Tarjan
 2. executar Naive
 3. executar Fleury com Naive
 4. executar Fleury com Tarjan
 
-Tambem e possivel executar algumas classes diretamente:
+Também é possivel executar algumas classes diretamente:
 
 ```bash
 java NaiveBridge.NaiveBridgeFinder exemplosGrafos/grafo_ponte_100.txt
@@ -163,29 +154,13 @@ python3 exemplosGrafos/gerador_grafos_ponte.py
 
 ### Graficos de desempenho
 
-O script [`graficos_desempenho.py`](./graficos_desempenho.py) organiza a geracao de graficos
-a partir de medicoes de tempo em milissegundos.
+O script [`graficos_desempenho.py`](./graficos_desempenho.py) organiza a geração de graficos a partir de medições de tempo em milissegundos.
 
 ## Saidas Visuais
 
-Comparativo geral ja presente no repositorio:
+Comparativo geral ja presente no repositório:
 
 ![Comparativo geral](./graficos/comparativo_geral.png)
-
-## Pontos de Destaque
-
-- Estrutura de dados enxuta para adjacencia com `forward star`
-- Dois metodos diferentes para deteccao de pontes
-- Integracao entre deteccao de pontes e algoritmo de Fleury
-- Conjunto de exemplos escalando ate `100000` vertices
-- Scripts auxiliares para experimentos e relatorio
-
-## Proximos Passos Possiveis
-
-- Automatizar a coleta de tempos em lote para todos os grafos
-- Exportar resultados em CSV para uso direto em relatorios
-- Adicionar testes automatizados para validar as saidas dos algoritmos
-- Criar comparativos de memoria alem do tempo de execucao
 
 ## Autores
 
