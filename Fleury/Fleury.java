@@ -25,8 +25,9 @@ public class Fleury {
 
     private List<Aresta> arestasIncidentes(Grafo g, int v) {
         Set<Aresta> incidentesUnicas = new LinkedHashSet<>();
+        int[] pointer = g.getPointer();
 
-        for (int i = g.getPointer().get(v); i < g.getPointer().get(v + 1); i++) {
+        for (int i = pointer[v]; i < pointer[v + 1]; i++) {
             Aresta aresta = g.getArestaDoArco(i);
             if (aresta.isAtiva()) {
                 incidentesUnicas.add(aresta);

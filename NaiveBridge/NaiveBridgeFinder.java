@@ -54,19 +54,21 @@ public class NaiveBridgeFinder {
 
     private void dfsIterative(int start, boolean[] visited, Aresta ignoredEdge) {
         Deque<Integer> stack = new ArrayDeque<>();
+        int[] pointer = grafo.getPointer();
+        int[] arcDest = grafo.getArcDest();
         stack.push(start);
         visited[start] = true;
 
         while (!stack.isEmpty()) {
             int u = stack.pop();
 
-            for (int i = grafo.getPointer().get(u); i < grafo.getPointer().get(u + 1); i++) {
+            for (int i = pointer[u]; i < pointer[u + 1]; i++) {
                 Aresta aresta = grafo.getArestaDoArco(i);
                 if (!aresta.isAtiva()) {
                     continue;
                 }
 
-                int v = grafo.getArcDest().get(i);
+                int v = arcDest[i];
 
                 if (ignoredEdge != null && aresta.equals(ignoredEdge)) {
                     continue;

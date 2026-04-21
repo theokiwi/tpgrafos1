@@ -131,16 +131,18 @@ class Tarjan {
     }
 
     private void tarjanDFS(int u, int parent) {
+        int[] pointer = g.getPointer();
+        int[] arcDest = g.getArcDest();
         visited[u] = true;
         discovery[u] = low[u] = ++timer;
 
-        for (int i = g.getPointer().get(u); i < g.getPointer().get(u + 1); i++) {
+        for (int i = pointer[u]; i < pointer[u + 1]; i++) {
             Aresta aresta = g.getArestaDoArco(i);
             if (!aresta.isAtiva()) {
                 continue;
             }
 
-            int v = g.getArcDest().get(i);
+            int v = arcDest[i];
 
             if (v == parent) {
                 continue;

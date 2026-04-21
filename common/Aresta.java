@@ -7,7 +7,6 @@ public class Aresta implements Comparable<Aresta> {
     public final int u;
     public final int v;
     boolean ativa;
-    boolean ponte;
 
     public Aresta(int u, int v) {
         // faz com que pares sejam a mesma coisa independente da ordem, tipo (11, 92) = (11, 92)
@@ -19,10 +18,9 @@ public class Aresta implements Comparable<Aresta> {
             this.v = u;
         }
         this.ativa = true;
-        this.ponte = false;
     }
     
-    public Aresta(int u, int v, boolean ativa, boolean ponte) {
+    public Aresta(int u, int v, boolean ativa) {
         if (u <= v) {
             this.u = u;
             this.v = v;
@@ -31,7 +29,6 @@ public class Aresta implements Comparable<Aresta> {
             this.v = u;
         }
         this.ativa = ativa;
-        this.ponte = ponte;
     }
 
     public boolean isAtiva() {

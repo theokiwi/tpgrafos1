@@ -20,8 +20,8 @@ public class Grafo {
     private static final String EXEMPLOS_DIR = "exemplosGrafos";
 
     //Guarda as ligações com forward star
-    private final List<Integer> pointer;
-    private final List<Integer> arcDest;
+    private int[] pointer;
+    private int[] arcDest;
     private final List<Aresta> arcArestas;
     //Guarda os vertices e suas informações
     private final Set<Vertice> vertices;
@@ -34,8 +34,8 @@ public class Grafo {
     private int qntdArestas;
 
     public Grafo() {
-        this.pointer = new ArrayList<>();
-        this.arcDest = new ArrayList<>();
+        this.pointer = new int[0];
+        this.arcDest = new int[0];
         this.arcArestas = new ArrayList<>();
         this.vertices = new HashSet<>();
         this.arestas = new HashSet<>();
@@ -45,14 +45,14 @@ public class Grafo {
     }
 
     public Grafo(Grafo outro) {
-        this.pointer = new ArrayList<>(outro.pointer);
-        this.arcDest = new ArrayList<>(outro.arcDest);
+        this.pointer = outro.pointer.clone();
+        this.arcDest = outro.arcDest.clone();
         this.arcArestas = new ArrayList<>();
         this.vertices = new HashSet<>(outro.vertices);
         this.arestas = new HashSet<>();
         this.indiceArestas = new HashMap<>();
         for (Aresta aresta : outro.arestas) {
-            Aresta copia = new Aresta(aresta.u, aresta.v, aresta.ativa, aresta.ponte);
+            Aresta copia = new Aresta(aresta.u, aresta.v, aresta.ativa);
             this.arestas.add(copia);
             this.indiceArestas.put(copia, copia);
         }
@@ -65,8 +65,8 @@ public class Grafo {
     }
 
     public void leGrafo(String arquivo) {
-        pointer.clear();
-        arcDest.clear();
+        pointer = new int[0];
+        arcDest = new int[0];
         arcArestas.clear();
         vertices.clear();
         arestas.clear();
@@ -95,11 +95,6 @@ public class Grafo {
         } catch (IOException e) {
             throw new IllegalArgumentException("Erro ao ler arquivo: " + e.getMessage(), e);
         }
-    }
-
-    public void adicionaForwardStar(int origem, int destino, Aresta aresta) {
-        arcDest.add(destino);
-        arcArestas.add(aresta);
     }
 
     //como eles são sempre adicionados na ordem
@@ -143,11 +138,11 @@ public class Grafo {
         return graus[vertice] % 2 != 0;
     }
 
-    public List<Integer> getPointer() {
+    public int[] getPointer() {
         return pointer;
     }
 
-    public List<Integer> getArcDest() {
+    public int[] getArcDest() {
         return arcDest;
     }
 
@@ -178,6 +173,9 @@ public class Grafo {
         List<List<Integer>> adjacencias = new ArrayList<>();
         //lista das arestas que eu sei que existem
         List<Aresta> arestasOrdenadas = new ArrayList<>(arestas);
+        List<Integer> destinosTemporarios = new ArrayList<>(arestas.size() * 2);
+        arcArestas.clear();
+        pointer = new int[qntdVertices + 1];
 
         //inicializa a lista das adjacencias pra cada vertice
         for (int i = 0; i < qntdVertices; i++) {
@@ -199,12 +197,17 @@ public class Grafo {
 
         //faço os vetores de pointer e arcDest conforme o forwardstar
         for (int vertice = 0; vertice < qntdVertices; vertice++) {
-            pointer.add(arcDest.size());
+            pointer[vertice] = destinosTemporarios.size();
             for (int destino : adjacencias.get(vertice)) {
-                adicionaForwardStar(vertice, destino, indiceArestas.get(new Aresta(vertice, destino)));
+                destinosTemporarios.add(destino);
+                arcArestas.add(indiceArestas.get(new Aresta(vertice, destino)));
             }
         }
-        pointer.add(arcDest.size());
+        pointer[qntdVertices] = destinosTemporarios.size();
+        arcDest = new int[destinosTemporarios.size()];
+        for (int i = 0; i < destinosTemporarios.size(); i++) {
+            arcDest[i] = destinosTemporarios.get(i);
+        }
     }
 
     private File resolverArquivo(String arquivo) throws FileNotFoundException {
