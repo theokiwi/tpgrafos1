@@ -1,8 +1,5 @@
+import heapq
 import random
-from pathlib import Path
-
-
-BASE_DIR = Path(__file__).resolve().parent
 
 
 def criar_grafo_vazio(n):
@@ -11,8 +8,8 @@ def criar_grafo_vazio(n):
 
 def adicionar_aresta(grafo, u, v):
     """
-    Adiciona uma aresta em um grafo simples não direcionado.
-    Retorna True se adicionou, False caso contrário.
+    Adiciona uma aresta em um grafo simples nao direcionado.
+    Retorna True se adicionou, False caso contrario.
     """
     if u == v:
         return False
@@ -24,31 +21,40 @@ def adicionar_aresta(grafo, u, v):
     return True
 
 
+def adicionar_ciclo_aleatorio(grafo, vertices):
+    """
+    Adiciona um ciclo simples usando exatamente os vertices informados.
+    """
+    if len(vertices) < 3:
+        raise ValueError("Cada bloco deve ter pelo menos 3 vertices.")
+
+    ordem = list(vertices)
+    random.shuffle(ordem)
+
+    for i in range(len(ordem)):
+        u = ordem[i]
+        v = ordem[(i + 1) % len(ordem)]
+        adicionar_aresta(grafo, u, v)
+
+
 def gerar_base_conexa_aleatoria(n):
     """
     Gera uma base conexa e euleriana:
-    um ciclo Hamiltoniano aleatório sobre todos os vértices.
-    Todo vértice fica com grau 2.
+    um ciclo Hamiltoniano aleatorio sobre todos os vertices.
+    Todo vertice fica com grau 2.
     """
     if n < 3:
         raise ValueError("Para este gerador, use n >= 3.")
 
     grafo = criar_grafo_vazio(n)
-    perm = list(range(n))
-    random.shuffle(perm)
-
-    for i in range(n):
-        u = perm[i]
-        v = perm[(i + 1) % n]
-        adicionar_aresta(grafo, u, v)
-
+    adicionar_ciclo_aleatorio(grafo, range(n))
     return grafo
 
 
 def escolher_aresta_ausente(grafo, proibidos=None, max_tentativas=20000):
     """
-    Escolhe aleatoriamente uma aresta que ainda não existe no grafo.
-    O conjunto 'proibidos' impede o uso de certos vértices, se necessário.
+    Escolhe aleatoriamente uma aresta que ainda nao existe no grafo.
+    O conjunto 'proibidos' impede o uso de certos vertices, se necessario.
     """
     n = len(grafo)
     if proibidos is None:
@@ -65,7 +71,6 @@ def escolher_aresta_ausente(grafo, proibidos=None, max_tentativas=20000):
         if v not in grafo[u]:
             return u, v
 
-    # fallback determinístico, caso a busca aleatória falhe
     for u in range(n):
         if u in proibidos:
             continue
@@ -75,17 +80,142 @@ def escolher_aresta_ausente(grafo, proibidos=None, max_tentativas=20000):
             if v not in grafo[u]:
                 return u, v
 
-    raise RuntimeError("Não foi possível encontrar uma aresta ausente válida.")
+    raise RuntimeError("Nao foi possivel encontrar uma aresta ausente valida.")
+
+
+def escolher_quantidade_blocos(n, minimo_blocos):
+    """
+    Define quantos blocos ciclicos o gerador vai usar.
+    Mais blocos significam mais pontes entre blocos.
+    """
+    maximo_por_tamanho = n // 3
+    if maximo_por_tamanho < minimo_blocos:
+        raise ValueError(
+            f"Nao e possivel gerar {minimo_blocos} blocos com apenas {n} vertices."
+        )
+
+    quantidade = max(minimo_blocos, n // 200)
+    quantidade = min(quantidade, 500, maximo_por_tamanho)
+    return quantidade
+
+
+def particionar_vertices_em_blocos(n, quantidade_blocos, tamanho_minimo=3):
+    """
+    Particiona os vertices em blocos disjuntos, cada um com pelo menos 3 vertices.
+    """
+    if quantidade_blocos * tamanho_minimo > n:
+        raise ValueError("Nao ha vertices suficientes para formar os blocos pedidos.")
+
+    vertices = list(range(n))
+    random.shuffle(vertices)
+
+    tamanhos = [tamanho_minimo] * quantidade_blocos
+    restante = n - quantidade_blocos * tamanho_minimo
+
+    for _ in range(restante):
+        tamanhos[random.randrange(quantidade_blocos)] += 1
+
+    blocos = []
+    inicio = 0
+    for tamanho in tamanhos:
+        fim = inicio + tamanho
+        blocos.append(vertices[inicio:fim])
+        inicio = fim
+
+    random.shuffle(blocos)
+    return blocos
+
+
+def criar_blocos_ciclicos(n, quantidade_blocos):
+    """
+    Cria blocos que, individualmente, nao possuem pontes.
+    As pontes do grafo final sao exatamente as arestas que conectam blocos distintos.
+    """
+    grafo = criar_grafo_vazio(n)
+    blocos = particionar_vertices_em_blocos(n, quantidade_blocos)
+    ancoras = []
+
+    for bloco in blocos:
+        adicionar_ciclo_aleatorio(grafo, bloco)
+        ancoras.append(random.choice(bloco))
+
+    return grafo, blocos, ancoras
+
+
+def conectar_blocos(grafo, ancoras, arestas_blocos):
+    """
+    Liga blocos distintos por arestas de ponte.
+    """
+    for a, b in arestas_blocos:
+        adicionar_aresta(grafo, ancoras[a], ancoras[b])
+
+
+def gerar_arvore_aleatoria(num_vertices):
+    """
+    Gera uma arvore aleatoria usando a codificacao de Prufer.
+    """
+    if num_vertices < 1:
+        return []
+    if num_vertices == 1:
+        return []
+    if num_vertices == 2:
+        return [(0, 1)]
+
+    prufer = [random.randrange(num_vertices) for _ in range(num_vertices - 2)]
+    grau = [1] * num_vertices
+
+    for x in prufer:
+        grau[x] += 1
+
+    folhas = [i for i in range(num_vertices) if grau[i] == 1]
+    heapq.heapify(folhas)
+    arestas = []
+
+    for x in prufer:
+        folha = heapq.heappop(folhas)
+        arestas.append((folha, x))
+        grau[folha] -= 1
+        grau[x] -= 1
+
+        if grau[x] == 1:
+            heapq.heappush(folhas, x)
+
+    u = heapq.heappop(folhas)
+    v = heapq.heappop(folhas)
+    arestas.append((u, v))
+    return arestas
+
+
+def contar_vertices_grau_impar_em_arvore(num_vertices, arestas):
+    graus = [0] * num_vertices
+
+    for u, v in arestas:
+        graus[u] += 1
+        graus[v] += 1
+
+    return sum(1 for grau in graus if grau % 2 != 0)
+
+
+def gerar_arvore_nao_caminho(num_vertices, max_tentativas=200):
+    """
+    Gera uma arvore que nao seja caminho, de forma a induzir mais de 2 vertices impares.
+    """
+    if num_vertices < 4:
+        raise ValueError("Para a classe nao euleriana com pontes, use pelo menos 4 blocos.")
+
+    for _ in range(max_tentativas):
+        arestas = gerar_arvore_aleatoria(num_vertices)
+        if contar_vertices_grau_impar_em_arvore(num_vertices, arestas) > 2:
+            return arestas
+
+    return [(0, i) for i in range(1, num_vertices)]
 
 
 def adicionar_triangulos_aleatorios(grafo, quantidade, max_tentativas_por_triangulo=500):
     """
-    Adiciona triângulos aleatórios ao grafo.
+    Adiciona triangulos aleatorios ao grafo.
     Isso preserva a paridade dos graus:
-    cada vértice do triângulo recebe +2 no grau.
-    Portanto, um grafo euleriano continua euleriano.
-    Um semi-euleriano continua semi-euleriano.
-    Um não euleriano continua não euleriano.
+    cada vertice do triangulo recebe +2 no grau.
     """
     n = len(grafo)
     adicionados = 0
@@ -96,7 +226,38 @@ def adicionar_triangulos_aleatorios(grafo, quantidade, max_tentativas_por_triang
         a, b, c = random.sample(range(n), 3)
         tentativas += 1
 
-        # os 3 lados do triângulo precisam ser arestas ausentes
+        if b in grafo[a]:
+            continue
+        if c in grafo[a]:
+            continue
+        if c in grafo[b]:
+            continue
+
+        adicionar_aresta(grafo, a, b)
+        adicionar_aresta(grafo, b, c)
+        adicionar_aresta(grafo, c, a)
+        adicionados += 1
+
+    return adicionados
+
+
+def adicionar_triangulos_em_blocos(grafo, blocos, quantidade, max_tentativas_por_triangulo=500):
+    """
+    Adiciona triangulos extras apenas dentro dos blocos, preservando as pontes entre blocos.
+    """
+    blocos_viaveis = [bloco for bloco in blocos if len(bloco) >= 3]
+    if not blocos_viaveis:
+        return 0
+
+    adicionados = 0
+    tentativas = 0
+    limite_total = max(quantidade * max_tentativas_por_triangulo, 1)
+
+    while adicionados < quantidade and tentativas < limite_total:
+        bloco = random.choice(blocos_viaveis)
+        a, b, c = random.sample(bloco, 3)
+        tentativas += 1
+
         if b in grafo[a]:
             continue
         if c in grafo[a]:
@@ -121,6 +282,9 @@ def eh_conexo(grafo):
     Verifica conectividade com DFS iterativa.
     """
     n = len(grafo)
+    if n == 0:
+        return True
+
     visitado = [False] * n
     pilha = [0]
     visitado[0] = True
@@ -139,11 +303,11 @@ def eh_conexo(grafo):
 
 def classificar_grafo(grafo):
     """
-    Classifica o grafo de acordo com os graus ímpares.
-    Considerando que o gerador sempre produz grafos conexos:
-    - 0 ímpares => euleriano
-    - 2 ímpares => semi-euleriano
-    - >2 ímpares => não euleriano
+    Classifica o grafo de acordo com os graus impares.
+    Considerando grafos conexos:
+    - 0 impares => euleriano
+    - 2 impares => semi-euleriano
+    - >2 impares => nao euleriano
     """
     if not eh_conexo(grafo):
         return "desconexo"
@@ -152,32 +316,29 @@ def classificar_grafo(grafo):
 
     if impares == 0:
         return "euleriano"
-    elif impares == 2:
+    if impares == 2:
         return "semi-euleriano"
-    else:
-        return "não euleriano"
+    return "nao euleriano"
 
 
 def validar_grafo(grafo, classe_esperada):
     """
-    Faz checagens de segurança.
+    Faz checagens de seguranca.
     """
     if not eh_conexo(grafo):
-        raise ValueError("O grafo gerado não é conexo.")
+        raise ValueError("O grafo gerado nao e conexo.")
 
     classe = classificar_grafo(grafo)
     if classe != classe_esperada:
         raise ValueError(
-            f"Grafo inválido: esperado '{classe_esperada}', mas obtido '{classe}'."
+            f"Grafo invalido: esperado '{classe_esperada}', mas obtido '{classe}'."
         )
 
 
 def gerar_grafo_euleriano(n, triangulos_extras=None):
     """
     Gera grafo conexo e euleriano.
-    Base: ciclo Hamiltoniano aleatório.
-    Depois adiciona triângulos aleatórios para variar a estrutura
-    sem alterar a paridade dos graus.
+    Observacao importante: grafo conectado e euleriano nao pode ter ponte.
     """
     grafo = gerar_base_conexa_aleatoria(n)
 
@@ -191,39 +352,52 @@ def gerar_grafo_euleriano(n, triangulos_extras=None):
 
 def gerar_grafo_semi_euleriano(n, triangulos_extras=None):
     """
-    Gera grafo conexo e semi-euleriano.
-    Estratégia:
-    1) gera um euleriano;
-    2) adiciona uma aresta ausente;
-       isso troca a paridade de exatamente 2 vértices.
+    Gera grafo conexo e semi-euleriano com pontes.
+
+    Estrategia:
+    1) cria blocos ciclicos;
+    2) conecta os blocos em cadeia com pontes;
+    3) opcionalmente adiciona triangulos apenas dentro dos blocos.
+
+    Como a "arvore de blocos" e um caminho, apenas os dois blocos extremos
+    contribuem com vertices de grau impar. O resultado final tem exatamente
+    2 vertices impares e varias pontes reais.
     """
-    grafo = gerar_grafo_euleriano(n, triangulos_extras)
+    quantidade_blocos = escolher_quantidade_blocos(n, minimo_blocos=3)
+    grafo, blocos, ancoras = criar_blocos_ciclicos(n, quantidade_blocos)
+    arestas_blocos = [(i, i + 1) for i in range(quantidade_blocos - 1)]
+    conectar_blocos(grafo, ancoras, arestas_blocos)
 
-    u, v = escolher_aresta_ausente(grafo)
-    adicionar_aresta(grafo, u, v)
+    if triangulos_extras is None:
+        triangulos_extras = max(2, n // 500)
 
+    adicionar_triangulos_em_blocos(grafo, blocos, triangulos_extras)
     validar_grafo(grafo, "semi-euleriano")
     return grafo
 
 
 def gerar_grafo_nao_euleriano(n, triangulos_extras=None):
     """
-    Gera grafo conexo e não euleriano.
-    Estratégia:
-    1) gera um euleriano;
-    2) adiciona duas arestas ausentes com 4 extremidades distintas;
-       isso cria exatamente 4 vértices ímpares.
+    Gera grafo conexo e nao euleriano com pontes.
+
+    Estrategia:
+    1) cria blocos ciclicos;
+    2) conecta os blocos por uma arvore aleatoria que nao seja caminho;
+    3) opcionalmente adiciona triangulos apenas dentro dos blocos.
+
+    O numero de vertices impares passa a ser maior que 2, e as conexoes
+    entre blocos continuam sendo pontes reais.
     """
-    grafo = gerar_grafo_euleriano(n, triangulos_extras)
+    quantidade_blocos = escolher_quantidade_blocos(n, minimo_blocos=4)
+    grafo, blocos, ancoras = criar_blocos_ciclicos(n, quantidade_blocos)
+    arestas_blocos = gerar_arvore_nao_caminho(quantidade_blocos)
+    conectar_blocos(grafo, ancoras, arestas_blocos)
 
-    u1, v1 = escolher_aresta_ausente(grafo)
-    adicionar_aresta(grafo, u1, v1)
+    if triangulos_extras is None:
+        triangulos_extras = max(2, n // 500)
 
-    proibidos = {u1, v1}
-    u2, v2 = escolher_aresta_ausente(grafo, proibidos=proibidos)
-    adicionar_aresta(grafo, u2, v2)
-
-    validar_grafo(grafo, "não euleriano")
+    adicionar_triangulos_em_blocos(grafo, blocos, triangulos_extras)
+    validar_grafo(grafo, "nao euleriano")
     return grafo
 
 
@@ -243,9 +417,7 @@ def salvar_em_txt(grafo, nome_arquivo):
             if u < v:
                 arestas.append((u, v))
 
-    caminho_saida = BASE_DIR / nome_arquivo
-
-    with caminho_saida.open("w", encoding="utf-8") as f:
+    with open(nome_arquivo, "w", encoding="utf-8") as f:
         f.write(f"{n} {len(arestas)}\n")
         for u, v in arestas:
             f.write(f"{u} {v}\n")
@@ -255,36 +427,33 @@ def gerar_todos():
     tamanhos = [100, 1000, 10000, 100000]
 
     for n in tamanhos:
-        print(f"\nGerando instâncias para n = {n}...")
+        print(f"\nGerando instancias para n = {n}...")
 
         g_euler = gerar_grafo_euleriano(n)
-        nome_arquivo = f"grafo_euleriano_{n}.txt"
-        salvar_em_txt(g_euler, nome_arquivo)
+        salvar_em_txt(g_euler, f"grafo_euleriano_{n}.txt")
         print(
-            f"  {nome_arquivo} -> "
+            f"  grafo_euleriano_{n}.txt -> "
             f"{classificar_grafo(g_euler)}, "
-            f"ímpares = {contar_vertices_impares(g_euler)}"
+            f"impares = {contar_vertices_impares(g_euler)}"
         )
 
         g_semi = gerar_grafo_semi_euleriano(n)
-        nome_arquivo = f"grafo_semi_{n}.txt"
-        salvar_em_txt(g_semi, nome_arquivo)
+        salvar_em_txt(g_semi, f"grafo_semi_{n}.txt")
         print(
-            f"  {nome_arquivo} -> "
+            f"  grafo_semi_{n}.txt -> "
             f"{classificar_grafo(g_semi)}, "
-            f"ímpares = {contar_vertices_impares(g_semi)}"
+            f"impares = {contar_vertices_impares(g_semi)}"
         )
 
         g_nao = gerar_grafo_nao_euleriano(n)
-        nome_arquivo = f"grafo_nao_{n}.txt"
-        salvar_em_txt(g_nao, nome_arquivo)
+        salvar_em_txt(g_nao, f"grafo_nao_{n}.txt")
         print(
-            f"  {nome_arquivo} -> "
+            f"  grafo_nao_{n}.txt -> "
             f"{classificar_grafo(g_nao)}, "
-            f"ímpares = {contar_vertices_impares(g_nao)}"
+            f"impares = {contar_vertices_impares(g_nao)}"
         )
 
 
 if __name__ == "__main__":
-    random.seed()  # pode trocar por um número fixo, ex.: 42, para reproduzir os mesmos grafos
+    random.seed()
     gerar_todos()
